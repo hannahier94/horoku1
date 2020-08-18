@@ -63,4 +63,8 @@ def predict():
 if __name__ == "__main__":
     global model
     model = open_model()
-    app.run()
+    port = os.environ.get('PORT')
+    try:
+        app.run(host='0.0.0.0', port=int(port))
+    else:
+        app.run(debug=True)
