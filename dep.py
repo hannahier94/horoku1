@@ -34,6 +34,7 @@ def use_pickle(X):
     """ Given X, returns a prediction 
     param X: the feature values to consider
     returns pred_pickle: the prediction """
+    model = open_model()
     if not isinstance(X, np.ndarray):
         X = np.array(eval(str(X)))
     if len(X.shape) == 1:
