@@ -68,4 +68,4 @@ if __name__ == "__main__":
     if port:
         app.run(host='0.0.0.0', port=int(port))
     else:
-        app.run(debug=True)
+        app.run()
