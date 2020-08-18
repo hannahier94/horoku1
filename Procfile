@@ -1,1 +1,1 @@
-web: gunicorn hw_flask_server:app
+web: gunicorn dep:app
