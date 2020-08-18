@@ -65,7 +65,7 @@ if __name__ == "__main__":
     global model
     model = open_model()
     port = os.environ.get('PORT')
-    try:
+    if port:
         app.run(host='0.0.0.0', port=int(port))
     else:
         app.run(debug=True)
