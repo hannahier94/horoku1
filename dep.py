@@ -52,8 +52,10 @@ def predict_single():
     
     for i, col in enumerate(cols):
         pred_array[i] = request.args.get(col)
-    return use_pickle(pred_array)
-
+    try:
+        return use_pickle(pred_array)
+    except:
+        return use_pickle(np.zeros(len(cols)))
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
