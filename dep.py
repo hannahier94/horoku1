@@ -20,7 +20,7 @@ cols = ['age',
  'ca',
  'thal']
 
-def open_model(filename = '/home/hanna/Downloads/rfc_heart.pkl'):
+def open_model(filename = 'rfc_heart.pkl'):
     """ Given filename, returns the model 
     param filename: filepath for model
     return : the model from pickle """
