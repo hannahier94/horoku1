@@ -62,4 +62,8 @@ def upload():
     return render_template('upload.html')
 
 if __name__ == "__main__":
-    app.run()
+    port = os.environ.get('PORT')
+    if port:
+        app.run(host='0.0.0.0', port=int(port))
+    else:
+        app.run()
