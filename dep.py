@@ -1,74 +1,65 @@
-import os
-from flask import Flask, request, jsonify
-import pickle
+import numpy as np
+from flask import Flask, request
+from utils.prepdata import extract_spectrum
+from utils.prepaudio import get_large_audio_transcription
+from utils.analyzetext import determine_tense_input
+from utils.TranslateOutput import get_translation
+from utils.misc import check_file, predict, open_model
+from flask import Flask, request, jsonify, render_template, flash, redirect, url_for, send_from_directory
 import numpy as np
 import json
+from tensorflow.keras.models import load_model
+import tensorflow as tf
+import os
 
-app = Flask(__name__) 
+EXTS = ['wav', 'mp3']
+UPLOAD_FOLDER = './uploads'
 
-global cols
-cols = ['age',
- 'sex',
- 'cp',
- 'trestbps',
- 'chol',
- 'fbs',
- 'restecg',
- 'thalach',
- 'exang',
- 'oldpeak',
- 'slope',
- 'ca',
- 'thal']
+if not os.path.exists('uploads'):
+    os.makedirs('uploads')
 
-def open_model(filename = 'rfc_heart.pkl'):
-    """ Given filename, returns the model 
-    param filename: filepath for model
-    return : the model from pickle """
-    with open(filename, 'rb') as file:
-        pickle_model = pickle.load(file)
-    return pickle_model
-
-def use_pickle(X):
+app = Flask(__name__, template_folder='templates/public/') 
     
-    """ Given X, returns a prediction 
-    param X: the feature values to consider
-    returns pred_pickle: the prediction """
-    model = open_model()
-    if not isinstance(X, np.ndarray):
-        X = np.array(eval(str(X)))
-    if len(X.shape) == 1:
-        X = X[np.newaxis , :]  
-    pred_pickle = model.predict(X)
-    return str(pred_pickle[0:X.shape[0]])
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['ALLOWED_EXTENSIONS'] = EXTS
+
+
+model = open_model()
+
+def invoke_pipeline(audiofile):
+    loc = './uploads/' + audiofile.filename
+    pred = predict(loc, model=open_model())
+    text = get_large_audio_transcription(audiofile)
+    split_sentence = determine_tense_input(text)
+    res = get_translation(split_sentence, pred)
+    return res
+
 
 @app.route('/')
 def enter():
     return 'Welcome!'
-@app.route('/predict_single')
-def predict_single():
-    """ Returns prediction for given parameters"""
-    pred_array = np.zeros(len(cols))
-    
-    for i, col in enumerate(cols):
-        pred_array[i] = request.args.get(col)
-    try:
-        return use_pickle(pred_array)
-    except:
-        return use_pickle(np.zeros(len(cols)))
-@app.route('/predict', methods=['POST'])
-def predict():
-    data = request.get_json()
-    prediction = use_pickle(data)
 
-    return jsonify(prediction)
+@app.route('/results')
+def display_res(text):
+    return text
 
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    if request.method == "POST":
+
+        if request.files:
+            
+            newfile = request.files["audio"]
+            
+            if not check_file(newfile.filename, \
+                              allowed = app.config['ALLOWED_EXTENSIONS']):
+                return redirect(request.url)
+            
+            newfile.save(os.path.join(app.config['UPLOAD_FOLDER'], 
+                                      newfile.filename))
+            
+            return invoke_pipeline(newfile)
+    return render_template('upload.html')
 
 if __name__ == "__main__":
-    global model
-    model = open_model()
-    port = os.environ.get('PORT')
-    if port:
-        app.run(host='0.0.0.0', port=int(port))
-    else:
-        app.run()
+    app.run()
